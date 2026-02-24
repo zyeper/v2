@@ -43,7 +43,11 @@ def process_chat_message(user_text, chat_file=None):
         elif chat_file.type.startswith("video"):
              with st.spinner("Analyzing attached video..."):
                 kws, _ = summarize_video(chat_file)
-                new_query = f"{user_text} \n\nVideo Context: {kws}"
+                if isinstance(kws, str) and kws.startswith("Error:"):
+                    st.error(kws)
+                    new_query = user_text
+                else:
+                    new_query = f"{user_text} \n\nVideo Context: {kws}"
     
     st.session_state.query = new_query
 
