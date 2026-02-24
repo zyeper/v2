@@ -10,7 +10,7 @@ from api_clients import (
     describe_image,
     extract_keywords,
     extract_event_location,
-    SERP_API_KEY
+    SERP_API_KEY,
 )
 import trafilatura
 import re
@@ -18,9 +18,6 @@ import PyPDF2
 import docx
 import tempfile
 import os
-import torch
-import whisper
-import shutil
 
 
 
@@ -92,64 +89,19 @@ def process_image_for_description(uploaded_image_file):
         return f"Error processing image: {e}"
 
 
-def transcribe_video(uploaded_video_file):
-    # ensure ffmpeg is available
-    if not shutil.which("ffmpeg"):
-        return "ffmpeg not found. Please install ffmpeg and ensure it's in your system's PATH."
-
-    if uploaded_video_file is None:
-        return "Error: No video file uploaded."
-
-    try:
-        # write tempfile reliably using bytes buffer
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmpfile:
-            tmpfile.write(uploaded_video_file.getvalue())
-            video_path = tmpfile.name
-
-        # choose device: prefer CUDA if available
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"transcribe_video: Using device {device}")
-
-        # load whisper model on the selected device
-        # whisper.load_model accepts device argument in recent versions; also ensure model is placed on device.
-        model = whisper.load_model("base", device=device)
-        # older versions may require model.to(device) but whisper API handles placement for us; safe to attempt:
-        try:
-            model.to(device)
-        except Exception:
-            # if the model object doesn't support .to(), ignore
-            pass
-
-        # transcribe and cleanup
-        result = model.transcribe(video_path)
-        # remove temp file
-        try:
-            os.unlink(video_path)
-        except Exception:
-            pass
-
-        return result.get("text", "")
-    except Exception as e:
-        print(f"transcribe_video: exception: {e}")
-        # attempt to remove temp file if exists
-        try:
-            if 'video_path' in locals() and os.path.exists(video_path):
-                os.unlink(video_path)
-        except Exception:
-            pass
-        return f"An error occurred during transcription: {e}"
-
-
 def summarize_video(uploaded_video_file):
-    transcription = transcribe_video(uploaded_video_file)
-    if isinstance(transcription, str) and (transcription.startswith("ffmpeg not found") or transcription.startswith("An error occurred") or transcription.startswith("Error:")):
-        return transcription, None
-    if transcription:
-        summary = summarize_text(transcription)
-        if summary:
-            keywords = extract_keywords(summary)
-            return keywords, transcription
-    return None, None
+    """
+    Video summarization has been disabled because the Whisper dependency
+    has been removed from this project.
+
+    This function now returns an error-style message so callers can surface
+    a clear explanation to the user without requiring Whisper.
+    """
+    return (
+        "Error: Video summarization is currently disabled because the Whisper "
+        "dependency has been removed from this application.",
+        None,
+    )
 
 def summarize_url(url):
     text = extract_article(url)
